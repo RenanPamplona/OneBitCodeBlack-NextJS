@@ -92,7 +92,7 @@ vão estar vazios para os bots que analisam, pois o conteúdo é diretamente ins
 
 
 
-RENDERIZAÇÃO DO LADO DO SERVIDOR
+SERVER SIDE RENDERING
 
 Podemos especificar isso com a função getServerSideProps
 
@@ -202,3 +202,55 @@ export const getStaticProps: GetStaticProps = async () => {
 
 Então determinamos o valor 10, que nesse caso vai ser 10 segundos
 Então a cada 10 segundos nossa página estática vai ser gerada novamente, atualizando esse dado da data
+
+
+
+
+
+CRIANDO APIs NO NEXTJS
+
+Então teremos um database.json no nosso projeto apenas para simular um banco de dados
+Esse database tem os dados dos nossos produtos
+
+Vemos que ele trabalha bem parecido com o express. Só precisaremos tipar a req e a res e aí podemos trabalhar
+
+Então criaremos uma pasta 'products' dentro de 'api'
+E dentro delá terá um index.ts e um [id].ts
+Na index será nossa chamada para /api/products/
+E terá o seguinte conteúdo:
+
+´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´	
+import { NextApiRequest, NextApiResponse } from "next";
+import products from "../../../database.json";
+
+export default function handler(req: NextApiRequest, res: NextApiResponse) {
+  res.status(200).json(products);
+}
+
+´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´
+
+E no [id].ts teremos:
+
+´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´
+import { NextApiRequest, NextApiResponse } from "next";
+import products from "../../../database.json";
+
+export default function handler(req: NextApiRequest, res: NextApiResponse) {
+  const { id } = req.query;
+
+  const product = products.find((product) => product.id === Number(id));
+  res.status(200).json(product);
+}
+
+
+´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´
+
+O importante aqui é lembrar que o req.query irá pegar a variável que nomeamos dentro dos []
+já que é id, teremos: const { id } = req.query
+se fosse productId, teriámos: const { productId } = req.query
+
+E aí depois teremos javascript normal para processar os dados
+
+~~
+Só lembrando que o ideal seria ter um try catch pra poder processar um possível erro de requisição
+~~
