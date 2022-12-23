@@ -254,3 +254,14 @@ E aí depois teremos javascript normal para processar os dados
 ~~
 Só lembrando que o ideal seria ter um try catch pra poder processar um possível erro de requisição
 ~~
+
+
+
+
+Na aula OBTENDO OS PRODUTOS DA API nós fizemos basicamente uma organização do frontend
+Acho que o que podemos notar de interessante é:
+
+  - O uso do successToast com timeout e state pra gerenciar
+  - Criação da pasta services no src, que é onde ficam as chamadas de API e o type dos produtos
+
+E que caso fossemos utilizar alguma imagem pelo Image do next, temos que adicionar o nome do domínio no next.config.js
