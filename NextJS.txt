@@ -37,7 +37,7 @@ Loading:
       - Makes completely static pages, which can't be changed
       - But there will be no javascript for the client side (Safer)
 
-   - (Kinda static and dynamic generation)
+   - ISR (Incremental Static Regeneration)
       - Takes the best of both worlds
       - Secure
       - Kinda fast
@@ -89,3 +89,116 @@ E aí é aquela mesma coisa de dar await no fetch, dar await na conversão pra j
 
 Mas o problema disso é que não é nada bom para o SEO da página, pois os campos dinâmicos do HTML
 vão estar vazios para os bots que analisam, pois o conteúdo é diretamente inserido pelo javascript, então os bots não veem
+
+
+
+RENDERIZAÇÃO DO LADO DO SERVIDOR
+
+Podemos especificar isso com a função getServerSideProps
+
+´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´
+export const getServerSideProps: GetServerSideProps = async () => {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_APIURL}/api/hello`);
+  const serverSideData: ApiResponse = await response.json();
+
+  return {
+    props: {
+      serverSideData,
+    },
+  };
+};
+
+´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´
+
+E aí a diferença é que não é o caminho relativo, mas sim o absoluto que teremos que realizar o fetch
+E para fazer isso, passamos uma variável de ambiente, que servirá como caminho para colocar anteriormente
+
+No ambiente de desenvolvimento (no notebook/pc), criaremos um arquivo .env.development.local
+Dentro dele, passaremos as variáveis de ambiente que quisermos
+No noso caso, terá um prefixo NEXT_PUBLIC_
+
+Já que a nossa variável é o caminho para a api, teremos NEXT_PUBLIC_APIURL
+e o valor dela é o caminho do site (no caso: http://localhost:3000)
+
+Já no vercel, teremos que passar uma variável de ambiente pelo site mesmo e dar um redeploy
+mas a diferença é que lá o valor será o próprio endereço padrão do site
+
+Além disso, retornamos daquela forma ali, um objeto contendo uma propriedade props e dentro dela nossos dados
+E aí tem que configurar as props do component:
+
+´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´
+const Dynamic: NextPage = (props: {
+  children?: ReactNode;
+  serverSideData?: ApiResponse;
+}) => {
+
+   // component...
+
+}
+
+´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´
+
+
+
+STATIC SITE GENERATION
+
+Teremos que utilizar uma função parecida com a do GetServerSideProps, mas no caso, pra props estáticos
+
+´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´
+export const getStaticProps: GetStaticProps = async () => {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_APIURL}/api/hello`);
+  const staticData: ApiResponse = await response.json();
+
+  return {
+    props: {
+      staticData,
+    },
+  };
+};
+
+´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´
+
+E aí só tem que alterar os parâmetros do component e tá pronto
+
+´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´
+const Static: NextPage = (props: {
+  children?: ReactNode;
+  staticData?: ApiResponse;
+}) => {
+
+   // component...
+
+}
+
+´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´
+
+Aí o comportamento que vamos perceber é que vai ficar algo totalmente estático
+Vemos isso por meio do elemento de data que estamos carregando
+Ele vai aparecer a data que estava quando ocorreu o build e não muda
+
+Agora, se quisermos uma atualização constante mas mantendo o formato de páginas estáticas
+precisaremos do ISR (Incremental Static Regeneration)
+
+
+
+INCREMENTAL STATIC REGENERATION
+
+Só teremos que adicionar uma prorpiedade para o return da nossa getStaticProps, o revalidate
+
+´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´
+export const getStaticProps: GetStaticProps = async () => {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_APIURL}/api/hello`);
+  const staticData: ApiResponse = await response.json();
+
+  return {
+    props: {
+      staticData,
+    },
+    revalidate: 10,
+  };
+};
+
+´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´
+
+Então determinamos o valor 10, que nesse caso vai ser 10 segundos
+Então a cada 10 segundos nossa página estática vai ser gerada novamente, atualizando esse dado da data
