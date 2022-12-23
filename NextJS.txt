@@ -1,0 +1,91 @@
+NEXTJS
+
+Possui vários diferenciais:
+
+Components: 
+   - Link
+      -Helps you manage navigation through pages
+
+   - Head
+      -Lets you edit the head of your page, like meta tags or the title
+
+   - Image
+      -Helps on sizing and on letting a pre-selected space for the image before it loads
+
+   - And more
+
+
+Routes:
+   - Each folder you create inside /pages will become a route
+   - So if you want a route for cars:
+      - Page for all cars
+      - Page for each individual card
+
+   1 - You create a folder cars inside pages
+   2 - You create a index.jsx for the all cars page
+   3 - You create a [id].jsx for each car
+
+   - If you create a file with the name inside [], it is a param
+   - So then you can call this and then get the id with router and useRouter()
+
+
+Loading:
+   - SSR (Server-Side-Rendering)
+      - Good but sometimes a bit slow
+
+   - SSG (Static Site Generation)
+      - Makes completely static pages, which can't be changed
+      - But there will be no javascript for the client side (Safer)
+
+   - (Kinda static and dynamic generation)
+      - Takes the best of both worlds
+      - Secure
+      - Kinda fast
+      - Better indexation (better SEO ranking)
+
+------------------------------------------------------------------------------
+
+_APP
+
+In the _app.js page you can pass something to all the components if you want
+Like global styles for example
+
+That's where the theme provider from styled-components would go
+
+
+API
+
+We can define the name of the API call in the file name
+So if we called localhost:3000/api/hello
+It would return the json from a database, that we could consume from a component
+
+
+HEAD
+
+import Head from 'next/head'
+E aí podemos mudar o title e a descrição de cada página por exemplo
+Além de até mudar o ícone se quisermos
+
+
+DEPLOY
+
+Fazemos o deploy por meio da Vercell
+O next é deles, então é bem otimizado fazer por lá
+
+
+
+
+
+
+RENDERIZAÇÃO DO LADO DO CLIENTE
+
+Isso acontece quando chamamos um fetch, setamos no state dentro de um useEffect e exibimos na tela
+Acabamos de realizar uma renderização do lado do cliente
+
+~~
+Aliás, para chamar a api que temos dentro de pages, é só usar o path relativo '/api/[nome da chamada]'
+E aí é aquela mesma coisa de dar await no fetch, dar await na conversão pra json e devolver
+~~
+
+Mas o problema disso é que não é nada bom para o SEO da página, pois os campos dinâmicos do HTML
+vão estar vazios para os bots que analisam, pois o conteúdo é diretamente inserido pelo javascript, então os bots não veem
