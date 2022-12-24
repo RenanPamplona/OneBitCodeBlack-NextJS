@@ -4,6 +4,7 @@ import Link from "next/link";
 import React, { useState } from "react";
 import { Button, Card, CardBody, CardSubtitle } from "reactstrap";
 import { ProductType } from "../services/products";
+import { useCart } from "./hooks/useCart";
 import SuccessToast from "./successToast";
 
 type ProductCardProps = {
@@ -13,7 +14,7 @@ type ProductCardProps = {
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const [toastIsOpen, setToastIsOpen] = useState(false);
   const { id, name, imageUrl, price } = product;
-
+  const { addProduct } = useCart();
   return (
     <>
       <Card>
@@ -29,7 +30,10 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           </Link>
 
           <CardSubtitle className="mb-3 text-muted" tag="h6">
-            R$ {price}
+            {price.toLocaleString("pt-BR", {
+              style: "currency",
+              currency: "BRL",
+            })}
           </CardSubtitle>
 
           <Button
@@ -37,6 +41,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             className="pb-2"
             block
             onClick={() => {
+              addProduct(product);
               setToastIsOpen(true);
               setTimeout(() => setToastIsOpen(false), 1000 * 3);
             }}

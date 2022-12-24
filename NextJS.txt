@@ -51,6 +51,7 @@ In the _app.js page you can pass something to all the components if you want
 Like global styles for example
 
 That's where the theme provider from styled-components would go
+And the context also
 
 
 API
@@ -265,3 +266,258 @@ Acho que o que podemos notar de interessante é:
   - Criação da pasta services no src, que é onde ficam as chamadas de API e o type dos produtos
 
 E que caso fossemos utilizar alguma imagem pelo Image do next, temos que adicionar o nome do domínio no next.config.js
+
+
+
+
+Na aula CRIANDO UMA LOJA COM ROTAS DINÂMICAS nós fizemos a configuração da página individual de cada produto
+
+Primeiramente fizemos a chamada para obter o produto:
+
+´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´	
+export const getStaticProps: GetStaticProps = async (context) => {
+  const id = context.params?.id;
+
+  if (typeof id === "string") {
+    const product = await fetchProduct(id);
+
+    return {
+      props: {
+        product,
+      },
+    };
+  }
+
+  return {
+    redirect: {
+      destination: "/products",
+      permanent: false,
+    },
+  };
+};
+
+´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´
+
+Fizemos essa verificação para ver se o produto realmente existia
+Então para pegar o id que vem da rota, nós pegamos o parâmetro context na função
+E aí pra pegar é só usar o context.params?.id
+E aí é só fazer a chamada individual do produto
+
+No caso de não haver aquele produto, nós temos um return que redireciona para algum lugar
+É uma boa ideia, já que aquele produto não existe
+
+
+Agora nós fizemos algo bem importante
+Passamos uma função que irá prever todas as rotas possíveis para aqueles produtos
+
+´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´
+export const getStaticPaths: GetStaticPaths = async () => {
+  const products = await fetchProducts();
+
+  const paths = products.map((product) => {
+    return {
+      params: {
+        id: product.id.toString(),
+      },
+    };
+  });
+
+  return {
+    paths: paths,
+    fallback: false,
+  };
+};
+
+´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´
+
+Pegamos todos os produtos (pois é lá que haverá cada produto para iterar)
+E aí mapeamos criando um objeto do formato que o GetStaticPaths quer
+
+Esse objeto tem o params, que incluirá o id (que no caso é o parâmetro o qual estamos falando)
+No return teremos os paths e o fallback, que é se queremos ou não que o next faça algo caso algum produto não exista
+Passando false ele vai apenas retornar uma página 404
+
+
+
+
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+ADICIONANDO UM CARRINHO (APRENDIZADO SOBRE CONTEXT)
+
+Primeiramente precisamos de um contexto
+Usaremos o hook useContext do react
+Isso é muito útil
+
+Primeiramente criamos uma pasta hooks dentro de components
+Dentro dela teremos o useCart.tsx
+
+agora teremos o grosso do context:
+
+´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´
+const CartContext = createContext<CartContextType>({} as CartContextType);
+
+export const CartContextProvider = (props: { children?: ReactNode }) => {
+  const [cart, setCart] = useState<ProductType[]>([]);
+
+  useEffect(() => {
+    const storedCart = localStorage.getItem("shopping-cart");
+
+    if (storedCart) {
+      setCart(JSON.parse(storedCart));
+    }
+  }, []);
+
+  const addProduct = (product: ProductType) => {
+    const updatedCart = [...cart, product];
+    localStorage.setItem("shopping-cart", JSON.stringify(updatedCart));
+    setCart(updatedCart);
+  };
+
+  const removeProduct = (productId: number) => {
+    const productIndex = cart.findIndex((product) => product.id === productId);
+
+    if (productIndex !== -1) {
+      const updatedCart = [...cart];
+      updatedCart.splice(productIndex, 1);
+      localStorage.setItem("shopping-cart", JSON.stringify(updatedCart));
+      setCart(updatedCart);
+    }
+  };
+
+  return (
+    <CartContext.Provider value={{ cart, addProduct, removeProduct }}>
+      {props.children}
+    </CartContext.Provider>
+  );
+};
+
+export const useCart = () => useContext(CartContext);
+
+´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´
+
+Primeiramente criamos um card context que vai ser utilizado aqui no export para facilitar as coisas
+Aí teremos o CartContextProvider
+
+Isso funciona da seguinte maneira:
+
+Aqui nós tinhamos um useEffect e algumas funções, mas aqui poderia servir 
+para guardar os states que vão ser usados ao longo da aplicação
+
+agora o mais importante
+Retornaremos um elemento wrapper
+
+Terá essa estrutura mesmo, será o <CartContext.Provider></CartContext.Provider>
+O value incluirá o que poderemos usar ao longo da aplicação
+e dentro dele teremos o props.children, pois ele vai englobar toda a aplicação
+
+Teremos que dar um wrap lá no nosso root, que no caso é o _app
+
+´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´
+import "bootstrap/dist/css/bootstrap.min.css";
+import type { AppProps } from "next/app";
+import { CartContextProvider } from "../src/components/hooks/useCart";
+
+export default function App({ Component, pageProps }: AppProps) {
+  return (
+    <CartContextProvider>
+      <Component {...pageProps} />;
+    </CartContextProvider>
+  );
+}
+
+´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´
+
+E para usar é só ir dentro de um component e usar:
+const {propriedades, que, deseja, usar} = useCart()
+
+Fizemos isso no botão do productCard e no productDetails
+
+
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+
+~~~~~~~
+Coisas específicas desse projeto (EM RELAÇÃO AO CONTEXT)
+
+No nosso caso, teremos um useEffect de renderização:
+  Caso os dados já existam no localstorage, ele vai transformar em objeto e colocar no cart
+
+
+addProduct:
+  criaremos uma cópia do array, mas com o novo getItem
+  usaremos o localStorage.setItem("shopping-cart", JSON.stringify(updatedCart));
+    isso pois caso ainda não haja um 'shopping-cart', ele vai criaremos
+  
+  e também temos que salvar no cart para usar naquela sessão ali
+
+
+removeProduct:
+  vai procurar o index do produto para excluir
+  Se o index for -1 (que é o que retorna quando esse produto não existe), ele não faz nada
+  Agora, se for diferente de -1,
+    criaremos uma cópia, removeremos com splice e aí salvaremos no localStorage e no cart
+~~~~~~~
+
+Aí agora teremos a parte de montar a tela
+A parte interessante a se notar aqui é a maneira de iterar sobre os produtos para montar a tabela do cart
+
+Primeiramente criamos um tipo para poder não só registrar o produto, mas também a quantidade:
+´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´
+type CartEntry = {
+  product: ProductType;
+  quantity: number;
+};
+
+´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´
+
+E aí terá um component que é o tableRow
+E depois teremos a tabela total, que dentro dela teremos isso:
+
+´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´
+const [cartEntries, setCartEntries] = useState<CartEntry[]>([]);
+  const { cart } = useCart();
+
+  useEffect(() => {
+    const entriesList = cart.reduce((list, product) => {
+      const entryIndex = list.findIndex(
+        (entry) => entry.product.id === product.id
+      );
+
+      if (entryIndex === -1) {
+        return [
+          ...list,
+          {
+            product,
+            quantity: 1,
+          },
+        ];
+      }
+
+      list[entryIndex].quantity++;
+      return list;
+    }, [] as CartEntry[]);
+
+    entriesList.sort((a, b) => a.product.id - b.product.id);
+    setCartEntries(entriesList);
+  }, [cart]);
+
+´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´
+
+The useEffect has dependency on the cart, so everytime it updates, it updates the component
+
+We are going to reduce to get the products to the way we want and to get quantities instead of one card per unity
+So we reduce: the acumulator is the list, and its initial value is [] as CartEntry[]
+
+We get the index
+If the index === -1 (it is not on the list yet),
+it returns (adds to the list) the actual list + the product on the CartEntry format
+
+And then independently if it added to the list or not,
+that product (list[entryIndex]) is going to have its quantity++
+and then we return the list because that's how reduce works
+
+
+
+E aí a ultima coisa a se notar é usar o .toLocaleString('pt-BR', { style: "currency", currency: "BRL" })
+Isso para deixar os preços mais legíveis
+E AÍ NÃO PRECISA FICAR COLOCANDO R$ ANTES
